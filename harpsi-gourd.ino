@@ -28,6 +28,8 @@
 #define LENGTH_OF_ARRAY(x) ((sizeof(x)/sizeof(x[0])))
 #define numElectrodes 12
 #define IDLE_TIMEOUT 30000
+#define IDLE_RANDOM_LOW_LIMIT 20000
+#define IDLE_RANDOM_HIGH_LIMIT 120000
 
 #include <SPI.h>
 #include "PitchToNote.h"
@@ -53,38 +55,38 @@ uint32_t lastAnyTouchedTimeOut;
 bool idle;
 
 mprs chips[] = {
-	(mprs) {
-		MPR121A, // pointer to above reserved memory structure
-		0x5A,    // individual address of MPR121 on I2C bus, as defined by pull ups
-		{30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-		{10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-		{00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-		{ 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-		{D5,  D5b,   C5,  A4b,   G4,  G4b,   D4,  D4b,   C4,   D7,  D7b,   C7}, //key
-		{ 1,    2,    3,    7,    8,    9,   13,   14,   15,   19,   20,   21}  //ledPos
-	},
+  (mprs) {
+    MPR121A, // pointer to above reserved memory structure
+    0x5A,    // individual address of MPR121 on I2C bus, as defined by pull ups
+    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
+    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
+    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
+    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
+    {D5,  D5b,   C5,  A4b,   G4,  G4b,   D4,  D4b,   C4,   D7,  D7b,   C7}, //key
+    { 1,    2,    3,    7,    8,    9,   13,   14,   15,   19,   20,   21}  //ledPos
+  },
 
-	(mprs) { // comment out if not present. Below will auto size array.
-	  MPR121B, // pointer to above reserved memory structure
-		0x5B,    // individual address of MPR121 on I2C bus, as defined by pull ups
-		{30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-		{10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-		{00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-		{ 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-		{B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  D6b,   C6}, //key
-		{ 4,    5,    6,   10,   11,   12,   16,   17,   18,   22,   23,   24}  //ledPos
-	}/*,
-	(mprs) { // comment out if not present. Below will auto size array.
-	  MPR121C, // pointer to above reserved memory structure
-		0x5C,    // individual address of MPR121 on I2C bus, as defined by pull ups
-		{30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-		{10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-		{00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-		{ 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-		{B7,  B7b,   A7,  A7b,   G7,  G7b,   F7,   E7,  E7b,   D7,  D7b,   C7}, //key
-		{ 9,    6,    3,    8,    5,    2,    7,    4,    1,   10,   11,   12}  //ledPos
-	}*/
-	};
+  (mprs) { // comment out if not present. Below will auto size array.
+    MPR121B, // pointer to above reserved memory structure
+    0x5B,    // individual address of MPR121 on I2C bus, as defined by pull ups
+    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
+    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
+    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
+    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
+    {B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  D6b,   C6}, //key
+    { 4,    5,    6,   10,   11,   12,   16,   17,   18,   22,   23,   24}  //ledPos
+  }/*,
+  (mprs) { // comment out if not present. Below will auto size array.
+    MPR121C, // pointer to above reserved memory structure
+    0x5C,    // individual address of MPR121 on I2C bus, as defined by pull ups
+    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
+    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
+    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
+    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
+    {B7,  B7b,   A7,  A7b,   G7,  G7b,   F7,   E7,  E7b,   D7,  D7b,   C7}, //key
+    { 9,    6,    3,    8,    5,    2,    7,    4,    1,   10,   11,   12}  //ledPos
+  }*/
+  };
 
 // Setup of NeoPixel Array
 #include <Adafruit_NeoPixel.h>
@@ -122,20 +124,22 @@ void colorWipe(uint32_t c, uint8_t wait) {
 
 // Setup of VS1053 Audio DSP
 #ifdef SFE
-	#define VS_XCS    6 // Control Chip Select Pin (for accessing SPI Control/Status registers)
-	#define VS_XDCS   7 // Data Chip Select / BSYNC Pin
-	#define VS_DREQ   2 // Data Request Pin: Player asks for more data
-	#define VS_RESET  8 //Reset is active low
-	#define VS_IRQ    3
+  #define VS_XCS    6 // Control Chip Select Pin (for accessing SPI Control/Status registers)
+  #define VS_XDCS   7 // Data Chip Select / BSYNC Pin
+  #define VS_DREQ   2 // Data Request Pin: Player asks for more data
+  #define VS_RESET  8 //Reset is active low
+  #define VS_IRQ    3
 #else // AdaFruit
-	#define VS_XCS    7 // Control Chip Select Pin (for accessing SPI Control/Status registers)
-	#define VS_XDCS   6 // Data Chip Select / BSYNC Pin
-	#define VS_DREQ   3 // Data Request Pin: Player asks for more data
-	#define VS_RESET  8 //Reset is active low
-	#define VS_IRQ    2
+  #define VS_XCS    7 // Control Chip Select Pin (for accessing SPI Control/Status registers)
+  #define VS_XDCS   6 // Data Chip Select / BSYNC Pin
+  #define VS_DREQ   3 // Data Request Pin: Player asks for more data
+  #define VS_RESET  8 //Reset is active low
+  #define VS_IRQ    2
 #endif
 
 int instrument = 1; //47;
+uint8_t volume = 127;
+uint8_t idleVolume = volume/4;
 
 void VSWriteRegister(unsigned char addressbyte, unsigned char highbyte, unsigned char lowbyte){
   while(!digitalRead(VS_DREQ)) ; //Wait for DREQ to go high indicating IC is available
@@ -264,8 +268,14 @@ void setup()
   Serial.print(F("Bank: "));
   Serial.print(0, DEC);
 
+  talkMIDI(0xB0, 0x07, volume); //0xB0 is channel message, set channel volume to near max (127)
+  Serial.print(F(", Set Volume: "));
+  Serial.print(volume, DEC);
+
+
+
   talkMIDI(0xC0, instrument, 0);
-  Serial.print(F(" Instrument: "));
+  Serial.print(F(", Instrument: "));
   Serial.println((instrument + 1), DEC);
 
   strip.begin();
@@ -280,13 +290,13 @@ void setup()
   lastAnyTouchedTimeOut = millis() + (uint32_t) IDLE_TIMEOUT;
   idle = 0;
 
-	noteOff(0, 0, 127); // first one is ignored
+  noteOff(0, 0, 127); // first one is ignored
 
-	// play an initial note
-	noteOn(0, B7, 127);
-	delay(500);
-	noteOff(0, B7, 127);
-	
+  // play an initial note
+  noteOn(0, B7, 127);
+  delay(500);
+  noteOff(0, B7, 127);
+  
 
   Serial.println(F("end setup"));
 } // setup()
@@ -369,14 +379,18 @@ void loop()
         Serial.println(F("Leaving Idle Mode."));
 
         // turn off any notes still on
-        for(uint8_t channel = 0; channel < numElectrodes; channel++){
-          if (chips[deviceID].noteState[channel] == 1) {
-            noteOff(0, chips[deviceID].key[channel], 127);
-            chips[deviceID].noteState[channel] = 0;
-            Serial.print(F(", NoteOFF=")); Serial.print(chips[deviceID].key[channel], DEC);
+        for(int deviceID2 = 0; deviceID2 < LENGTH_OF_ARRAY(chips); deviceID2++){
+          for(uint8_t channel = 0; channel < numElectrodes; channel++){
+            if (chips[deviceID2].noteState[channel] == 1) {
+              noteOff(0, chips[deviceID2].key[channel], 127);
+              chips[deviceID2].noteState[channel] = 0;
+              Serial.print(F(", NoteOFF=")); Serial.print(chips[deviceID2].key[channel], DEC);
+            }
           }
         }
-
+        talkMIDI(0xB0, 0x07, volume); //0xB0 is channel message, set channel volume to near max (127)
+        Serial.print(F(", Set Volume: "));
+        Serial.println(volume, DEC);
       }
     }
 
@@ -385,7 +399,7 @@ void loop()
       if(strip.getPixelColor((chips[deviceID].ledPos[channel] - 1))) { // if not OFF
         if(chips[deviceID].timeout[channel] < currentMillis) { // check if it needs changing
           Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), HEX);
-          uint32_t randomSeconds = random(200, 5000);
+          uint32_t randomSeconds = random(IDLE_RANDOM_LOW_LIMIT, IDLE_RANDOM_HIGH_LIMIT);
           Serial.print(F(", randomSeconds=")); Serial.print(randomSeconds, DEC);
           uint8_t ran = random(0, LENGTH_OF_ARRAY(rainbow));
           Serial.print(F(", ranRainbow=")); Serial.print(ran, DEC);
@@ -411,6 +425,9 @@ void loop()
   if((lastAnyTouchedTimeOut < currentMillis) && (idle == 0)) { // check if should be idle
     idle = 1;
     Serial.println(F("Gone to Idle Mode."));
+    talkMIDI(0xB0, 0x07, idleVolume); //0xB0 is channel message, set channel volume to near max (127)
+    Serial.print(F(", Set Volume: "));
+    Serial.println(idleVolume, DEC);
   }
 
   if(idle == 1) { // if in idle
@@ -420,7 +437,7 @@ void loop()
       for(uint8_t channel = 0; channel < numElectrodes; channel++){
         if(chips[deviceID].timeout[channel] < currentMillis) { // check if it needs changing
           Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), HEX);
-          uint32_t randomSeconds = random(500, 2000);
+          uint32_t randomSeconds = random(IDLE_RANDOM_LOW_LIMIT, IDLE_RANDOM_HIGH_LIMIT);
           Serial.print(F(", randomSeconds=")); Serial.print(randomSeconds, DEC);
           uint8_t ran = random(0, LENGTH_OF_ARRAY(rainbow));
           Serial.print(F(", ranRainbow=")); Serial.print(ran, DEC);
