@@ -30,6 +30,7 @@
 #define IDLE_TIMEOUT 30000
 #define IDLE_RANDOM_LOW_LIMIT 20000
 #define IDLE_RANDOM_HIGH_LIMIT 120000
+#define INSTRUMENT_CHANGE_TIMEOUT 4000
 
 #include <SPI.h>
 #include "PitchToNote.h"
@@ -52,7 +53,9 @@ MPR121_t MPR121B;  // can comment out unused to save dynamic memory.
 MPR121_t MPR121C;
 
 uint32_t lastAnyTouchedTimeOut;
+uint32_t lastAnyTouchedTimeOutInstrument;
 bool idle;
+bool idleInstrument;
 
 mprs chips[] = {
   (mprs) {
@@ -139,7 +142,7 @@ void colorWipe(uint32_t c, uint8_t wait) {
 
 int instrument = 1; //47;
 uint8_t volume = 127;
-uint8_t idleVolume = volume/4;
+uint8_t idleVolume = volume/3;
 
 void VSWriteRegister(unsigned char addressbyte, unsigned char highbyte, unsigned char lowbyte){
   while(!digitalRead(VS_DREQ)) ; //Wait for DREQ to go high indicating IC is available
@@ -289,6 +292,8 @@ void setup()
 
   lastAnyTouchedTimeOut = millis() + (uint32_t) IDLE_TIMEOUT;
   idle = 0;
+  lastAnyTouchedTimeOutInstrument = lastAnyTouchedTimeOut;
+  idleInstrument = 0;
 
   noteOff(0, 0, 127); // first one is ignored
 
@@ -373,6 +378,7 @@ void loop()
       }
 
       lastAnyTouchedTimeOut = millis() + (uint32_t) IDLE_TIMEOUT;
+      lastAnyTouchedTimeOutInstrument = millis() + INSTRUMENT_CHANGE_TIMEOUT;
       if(idle == 1) { // check if leaving idle
         idle = 0;
         colorWipe(strip.Color(0, 0, 0), 0); // OFF
@@ -392,6 +398,7 @@ void loop()
         Serial.print(F(", Set Volume: "));
         Serial.println(volume, DEC);
       }
+      idleInstrument = 0;
     }
 
     // check if individual neoPixels need updating
@@ -428,6 +435,15 @@ void loop()
     talkMIDI(0xB0, 0x07, idleVolume); //0xB0 is channel message, set channel volume to near max (127)
     Serial.print(F(", Set Volume: "));
     Serial.println(idleVolume, DEC);
+  }
+
+  if(lastAnyTouchedTimeOutInstrument < currentMillis) { // check if should be idle
+    lastAnyTouchedTimeOutInstrument = millis() + INSTRUMENT_CHANGE_TIMEOUT;
+    instrument = random(0, 127);
+    talkMIDI(0xC0, instrument, 0);
+    Serial.println(F("Instrument Idle Change"));
+    Serial.print(F(" Instrument: "));
+    Serial.println((instrument + 1), DEC);
   }
 
   if(idle == 1) { // if in idle
