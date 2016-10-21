@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 // Setup of Touch Sensor
-#include <MPR121.h>
+#include <MPR121.h> // https://github.com/BareConductive/mpr121
 #include <Wire.h>
 #define LENGTH_OF_ARRAY(x) ((sizeof(x)/sizeof(x[0])))
 #define numElectrodes 12
