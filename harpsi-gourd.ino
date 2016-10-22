@@ -66,7 +66,7 @@ mprs chips[] = {
     {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
     { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
     {D5,  D5b,   C5,  A4b,   G4,  G4b,   D4,  D4b,   C4,   D7,  D7b,   C7}, //key
-    { 1,    2,    3,    7,    8,    9,   13,   14,   15,   19,   20,   21}  //ledPos
+    { 3,    4,    5,    9,   10,   11,   15,   16,   17,   21,   22,   23}  //ledPos
   },
 
   (mprs) { // comment out if not present. Below will auto size array.
@@ -76,8 +76,8 @@ mprs chips[] = {
     {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
     {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
     { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-    {B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  D6b,   C6}, //key
-    { 4,    5,    6,   10,   11,   12,   16,   17,   18,   22,   23,   24}  //ledPos
+    {B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  E5b,   E5}, //key
+    { 6,    7,    8,   12,   13,   14,   18,   19,   20,   24,    2,    1}  //ledPos
   }/*,
   (mprs) { // comment out if not present. Below will auto size array.
     MPR121C, // pointer to above reserved memory structure
