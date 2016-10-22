@@ -371,7 +371,7 @@ void loop()
     for(uint8_t channel = 0; channel < numElectrodes; channel++){
       if(strip.getPixelColor((chips[deviceID].ledPos[channel] - 1))) { // if not OFF
         if(chips[deviceID].timeout[channel] < currentMillis) { // check if it needs changing
-          Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), HEX);
+          Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), DEC);
           uint32_t randomSeconds = random(IDLE_RANDOM_LOW_LIMIT, IDLE_RANDOM_HIGH_LIMIT);
           Serial.print(F(", randomSeconds=")); Serial.print(randomSeconds, DEC);
           uint8_t ran = random(0, LENGTH_OF_ARRAY(rainbow));
@@ -418,7 +418,7 @@ void loop()
     for(int deviceID = 0; deviceID < LENGTH_OF_ARRAY(chips); deviceID++){
       for(uint8_t channel = 0; channel < numElectrodes; channel++){
         if(chips[deviceID].timeout[channel] < currentMillis) { // check if it needs changing
-          Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), HEX);
+          Serial.print(F("led=")); Serial.print((chips[deviceID].ledPos[channel]), DEC);
           uint32_t randomSeconds = random(IDLE_RANDOM_LOW_LIMIT, IDLE_RANDOM_HIGH_LIMIT);
           Serial.print(F(", randomSeconds=")); Serial.print(randomSeconds, DEC);
           uint8_t ran = random(0, LENGTH_OF_ARRAY(rainbow));
