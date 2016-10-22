@@ -33,7 +33,6 @@
 #define INSTRUMENT_CHANGE_TIMEOUT 4000
 
 #include <SPI.h>
-#include "PitchToNote.h"
 
 typedef struct // defining each Chip and its associated Touch pins, Note to play, and NeoPixel position
   {
@@ -49,46 +48,42 @@ typedef struct // defining each Chip and its associated Touch pins, Note to play
 
 // reserve space for each chip that could be used.
 MPR121_t MPR121A;
-MPR121_t MPR121B;  // can comment out unused to save dynamic memory.
-MPR121_t MPR121C;
+MPR121_t MPR121B;
 
 uint32_t lastAnyTouchedTimeOut;
 uint32_t lastAnyTouchedTimeOutInstrument;
 bool idle;
 bool idleInstrument;
 
-mprs chips[] = {
-  (mprs) {
-    MPR121A, // pointer to above reserved memory structure
-    0x5A,    // individual address of MPR121 on I2C bus, as defined by pull ups
-    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-    {D5,  D5b,   C5,  A4b,   G4,  G4b,   D4,  D4b,   C4,   D7,  D7b,   C7}, //key
-    { 3,    4,    5,    9,   10,   11,   15,   16,   17,   21,   22,   23}  //ledPos
-  },
+#include "PitchToNote.h"
+/*
+Piano keys Left to Right
+  1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24
+ F3, G3b,  G3, A3b,  A3, B3b,  B3,  C4, D4b,  D4, E4b,  E4,  F4, G4b,  G4, A4b,  A4, B4b,  B4,  C5, D5b,  D5, E5b,  E5
+*/
 
-  (mprs) { // comment out if not present. Below will auto size array.
-    MPR121B, // pointer to above reserved memory structure
-    0x5B,    // individual address of MPR121 on I2C bus, as defined by pull ups
-    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-    {B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  E5b,   E5}, //key
-    { 6,    7,    8,   12,   13,   14,   18,   19,   20,   24,    2,    1}  //ledPos
-  }/*,
-  (mprs) { // comment out if not present. Below will auto size array.
-    MPR121C, // pointer to above reserved memory structure
-    0x5C,    // individual address of MPR121 on I2C bus, as defined by pull ups
-    {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
-    {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
-    {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
-    { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
-    {B7,  B7b,   A7,  A7b,   G7,  G7b,   F7,   E7,  E7b,   D7,  D7b,   C7}, //key
-    { 9,    6,    3,    8,    5,    2,    7,    4,    1,   10,   11,   12}  //ledPos
-  }*/
+mprs chips[] = {
+    (mprs) {
+      MPR121A, // pointer to above reserved memory structure
+      0x5A,    // ADDR tied to GND, individual address of MPR121 on I2C bus
+      {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
+      {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
+      {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
+      { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
+      {D5,  D5b,   C5,  A4b,   G4,  G4b,   D4,  D4b,   C4,   D7,  D7b,   C7}, //key    ** Customize to fit your Build **
+      { 3,    4,    5,    9,   10,   11,   15,   16,   17,   21,   22,   23}  //ledPos ** Customize to fit your Build **
+    },
+
+    (mprs) {
+      MPR121B, // pointer to above reserved memory structure
+      0x5B,     // ADDR tied to 5V, individual address of MPR121 on I2C bus
+      {30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30}, //tthresh
+      {10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10,   10}, //rthresh
+      {00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00,   00}, //timeout
+      { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}, //noteState
+      {B4,  B4b,   A4,   F4,   E4,  E4b,   F6,   E6,  E6b,   D6,  E5b,   E5}, //key    ** Customize to fit your Build **
+      { 6,    7,    8,   12,   13,   14,   18,   19,   20,   24,    2,    1}  //ledPos ** Customize to fit your Build **
+    }
   };
 
 // Setup of NeoPixel Array
@@ -301,7 +296,7 @@ void setup()
   noteOn(0, B7, 127);
   delay(500);
   noteOff(0, B7, 127);
-  
+
 
   Serial.println(F("end setup"));
 } // setup()
